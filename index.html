@@ -175,10 +175,18 @@
         correct.every(val => selected.includes(val));
 
       if (isCorrect) {
-        feedback.textContent = '✅ Správně!';
-        feedback.className = 'feedback correct';
-      } else {
-        feedback.textContent = `❌ Špatně. Správná odpověď: ${correct.join(', ')}`;
+  feedback.textContent = '✅ Správně!';
+  feedback.className = 'feedback correct';
+} else {
+  // Najdi přímé znění správných odpovědí
+  const correctTexts = Array.from(document.querySelectorAll('input[name="answer"]'))
+    .filter(input => correct.includes(input.value))
+    .map(input => {
+    const label = input.closest('label');
+    return label ? label.textContent.trim() : input.value;
+      });
+
+        feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
         feedback.className = 'feedback incorrect';
       }
 
