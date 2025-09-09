@@ -1,190 +1,38 @@
-<!DOCTYPE html>
-<html lang="cs">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kvíz z Excelu</title>
-  <script src="https://unpkg.com/read-excel-file@5.x/bundle/read-excel-file.min.js"></script>
+  <!-- ...tvé další skripty a styly -->
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 30px;
+      padding: 20px;
       max-width: 600px;
       margin: auto;
     }
 
-    .upload-btn {
-      display: inline-block;
-      background-color: #007bff;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-bottom: 20px;
-      text-align: center;
-    }
+    @media (max-width: 640px) {
+      body {
+        max-width: 100%;
+        padding: 15px;
+        box-sizing: border-box;
+      }
 
-    .question {
-      margin-bottom: 20px;
-      font-size: 18px;
-    }
+      button {
+        width: 100%;
+        font-size: 18px;
+        padding: 15px;
+      }
 
-    .option {
-      display: flex;
-      align-items: center;
-      margin: 8px 0;
-      border: 1px solid #ccc;
-      padding: 8px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+      .question {
+        font-size: 20px;
+      }
 
-    .option:hover {
-      background-color: #f0f0f0;
-    }
-
-    .option input[type="checkbox"] {
-      margin-right: 12px;
-      transform: scale(1.2);
-      cursor: pointer;
-    }
-
-    .feedback {
-      font-weight: bold;
-      margin-top: 15px;
-      font-size: 16px;
-    }
-
-    .correct {
-      color: green;
-    }
-
-    .incorrect {
-      color: red;
-    }
-
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
+      .option {
+        font-size: 18px;
+        padding: 12px;
+      }
     }
   </style>
 </head>
-<body>
-  <h1>Kvíz z Excelu</h1>
 
-  <!-- Vlastní tlačítko pro výběr souboru -->
-  <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
-  <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
-
-  <div id="quizContainer" style="display:none;">
-    <div class="question" id="qText"></div>
-    <div id="options"></div>
-    <button id="checkBtn">Ověřit</button>
-    <div class="feedback" id="feedback"></div>
-  </div>
-
-  <script>
-    let quiz = [];
-    let questionOrder = [];
-    let current = 0;
-
-    const fileInput = document.getElementById('fileInput');
-    const quizContainer = document.getElementById('quizContainer');
-    const qText = document.getElementById('qText');
-    const optionsDiv = document.getElementById('options');
-    const checkBtn = document.getElementById('checkBtn');
-    const feedback = document.getElementById('feedback');
-
-    function shuffleArray(array) {
-      return array.map(value => ({ value, sort: Math.random() }))
-                  .sort((a, b) => a.sort - b.sort)
-                  .map(({ value }) => value);
-    }
-
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-
-      readXlsxFile(file).then(rows => {
-        quiz = rows.slice(1).map(r => ({
-          question: r[0],
-          options: [r[1], r[2], r[3]].filter(Boolean),
-          correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
-        }));
-
-        questionOrder = shuffleArray([...Array(quiz.length).keys()]);
-        current = 0;
-        quizContainer.style.display = '';
-        showQuestion();
-      });
-    });
-
-    function showQuestion() {
-      feedback.textContent = '';
-      optionsDiv.innerHTML = '';
-
-      if (current >= questionOrder.length) {
-        qText.innerText = '🎉 Kvíz dokončen!';
-        checkBtn.disabled = true;
-        return;
-      }
-
-      const item = quiz[questionOrder[current]];
-      qText.innerText = item.question;
-
-      const labeledOptions = item.options.map((text, i) => ({
-        label: String.fromCharCode(65 + i),
-        text: text
-      }));
-
-      const shuffled = shuffleArray(labeledOptions);
-      item.shuffledOptions = shuffled;
-
-      shuffled.forEach((opt, idx) => {
-        const id = `option-${current}-${idx}`;
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'option';
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = opt.label;
-        checkbox.id = id;
-
-        const label = document.createElement('label');
-        label.setAttribute('for', id);
-        label.textContent = opt.text;
-
-        wrapper.appendChild(checkbox);
-        wrapper.appendChild(label);
-        optionsDiv.appendChild(wrapper);
-      });
-    }
-
-    checkBtn.addEventListener('click', () => {
-      const item = quiz[questionOrder[current]];
-      const selected = Array.from(optionsDiv.querySelectorAll('input:checked'))
-        .map(cb => cb.value);
-      const correct = item.correct;
-
-      const isCorrect = selected.length === correct.length &&
-        selected.every(val => correct.includes(val)) &&
-        correct.every(val => selected.includes(val));
-
-      if (isCorrect) {
-        feedback.textContent = '✅ Správně!';
-        feedback.className = 'feedback correct';
-      } else {
-        feedback.textContent = `❌ Špatně. Správná odpověď: ${correct.join(', ')}`;
-        feedback.className = 'feedback incorrect';
-      }
-
-      current++;
-      setTimeout(showQuestion, 2000);
-    });
-  </script>
-</body>
-</html>
