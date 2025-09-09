@@ -174,21 +174,20 @@
         selected.every(val => correct.includes(val)) &&
         correct.every(val => selected.includes(val));
 
-      if (isCorrect) {
+     if (isCorrect) {
   feedback.textContent = '✅ Správně!';
   feedback.className = 'feedback correct';
 } else {
-  // Najdi přímé znění správných odpovědí
-  const correctTexts = Array.from(document.querySelectorAll('input[name="answer"]'))
+  const correctTexts = Array.from(optionsDiv.querySelectorAll('input'))
     .filter(input => correct.includes(input.value))
     .map(input => {
-    const label = input.closest('label');
-    return label ? label.textContent.trim() : input.value;
-      });
+      const label = input.parentElement.querySelector('label');
+      return label ? label.textContent.trim() : input.value;
+    });
 
-        feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
-        feedback.className = 'feedback incorrect';
-      }
+  feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
+  feedback.className = 'feedback incorrect';
+}
 
       current++;
       setTimeout(showQuestion, 2000);
