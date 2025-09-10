@@ -194,7 +194,11 @@
 </head>
 <body>
   <h1>Kvíz z Excelu</h1>
-
+  
+  <!-- Výběr souboru -->
+  <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
+  <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
+  
   <!-- Režim testování -->
   <div style="margin-bottom: 15px;">
     <label>
@@ -210,10 +214,6 @@
     <strong>Počet chyb:</strong> <span id="errorCount">0</span>
   </div>
   <button id="resetBtn" onclick="resetAll()">🔄 Reset</button>
-
-  <!-- Výběr souboru -->
-  <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
-  <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
 
   <!-- Kvíz -->
   <div id="quizContainer" style="display:none;">
