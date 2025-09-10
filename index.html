@@ -2,42 +2,50 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kvíz z Excelu</title>
   <script src="https://unpkg.com/read-excel-file@5.x/bundle/read-excel-file.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 30px;
+      padding: 20px;
+      margin: 0 auto;
       max-width: 600px;
-      margin: auto;
+      background-color: #fdfdfd;
+      color: #222;
     }
 
     .upload-btn {
       display: inline-block;
       background-color: #007bff;
       color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
-      font-size: 16px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 18px;
       cursor: pointer;
       margin-bottom: 20px;
+      width: 100%;
+      box-sizing: border-box;
       text-align: center;
     }
 
     .question {
       margin-bottom: 20px;
-      font-size: 18px;
+      font-size: 20px;
+      font-weight: bold;
     }
 
     .option {
       display: flex;
       align-items: center;
-      margin: 8px 0;
+      margin: 10px 0;
       border: 1px solid #ccc;
-      padding: 8px;
+      padding: 12px;
       border-radius: 6px;
       cursor: pointer;
       transition: background 0.2s;
+      font-size: 18px;
+      background-color: #fff;
     }
 
     .option:hover {
@@ -45,37 +53,121 @@
     }
 
     .option input[type="checkbox"] {
-      margin-right: 12px;
-      transform: scale(1.2);
+      margin-right: 14px;
+      transform: scale(1.4);
       cursor: pointer;
     }
 
     .feedback {
       font-weight: bold;
       margin-top: 15px;
-      font-size: 16px;
+      font-size: 18px;
     }
 
     .correct {
-      color: green;
+      color: #28a745;
     }
 
     .incorrect {
-      color: red;
+      color: #dc3545;
     }
 
     button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      font-size: 16px;
+      margin-top: 20px;
+      padding: 12px 20px;
+      font-size: 18px;
       cursor: pointer;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    input[type="radio"] {
+      transform: scale(1.3);
+      margin-right: 6px;
+    }
+
+    label {
+      font-size: 17px;
+    }
+
+    @media (max-width: 480px) {
+      .upload-btn,
+      button {
+        font-size: 16px;
+        padding: 10px;
+      }
+
+      .question {
+        font-size: 18px;
+      }
+
+      .option {
+        font-size: 16px;
+        padding: 10px;
+      }
+
+      .feedback {
+        font-size: 16px;
+      }
+
+      label {
+        font-size: 16px;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #121212;
+        color: #e0e0e0;
+      }
+
+      .upload-btn {
+        background-color: #2196f3;
+        color: white;
+      }
+
+      .option {
+        background-color: #1e1e1e;
+        border: 1px solid #444;
+      }
+
+      .option:hover {
+        background-color: #2a2a2a;
+      }
+
+      .feedback {
+        color: #e0e0e0;
+      }
+
+      .correct {
+        color: #6fbf73;
+      }
+
+      .incorrect {
+        color: #ef5350;
+      }
+
+      button {
+        background-color: #333;
+        color: white;
+        border: 1px solid #444;
+      }
+
+      button:hover {
+        background-color: #444;
+      }
+
+      input[type="radio"],
+      input[type="checkbox"] {
+        accent-color: #2196f3;
+      }
     }
   </style>
 </head>
 <body>
   <h1>Kvíz z Excelu</h1>
 
-  <!-- Výběr režimu -->
+  <!-- Režimy testování -->
   <div style="margin-bottom: 15px;">
     <label>
       <input type="radio" name="mode" value="infinite" checked onchange="switchMode('infinite')"> Nekonečný test
@@ -85,13 +177,13 @@
     </label>
   </div>
 
-  <!-- Chyby a reset -->
+  <!-- Počet chyb a reset -->
   <div style="margin-bottom: 15px;">
     <strong>Počet chyb:</strong> <span id="errorCount">0</span>
     <button onclick="resetAll()" style="margin-left: 20px;">🔄 Reset</button>
   </div>
 
-  <!-- Tlačítko pro soubor -->
+  <!-- Nahrání souboru -->
   <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
   <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
 
@@ -135,7 +227,7 @@
           correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
         }));
 
-        resetAll(); // inicializace
+        resetAll();
         quizContainer.style.display = '';
       });
     });
@@ -216,39 +308,38 @@
         wrapper.appendChild(label);
         optionsDiv.appendChild(wrapper);
       });
+
+      checkBtn.onclick = () => {
+        const selected = Array.from(optionsDiv.querySelectorAll('input:checked'))
+          .map(cb => cb.value);
+        const correct = item.correct;
+
+        const isCorrect = selected.length === correct.length &&
+          selected.every(val => correct.includes(val)) &&
+          correct.every(val => selected.includes(val));
+
+        if (isCorrect) {
+          feedback.textContent = '✅ Správně!';
+          feedback.className = 'feedback correct';
+        } else {
+          errorCount++;
+          document.getElementById('errorCount').textContent = errorCount;
+
+          const correctTexts = Array.from(optionsDiv.querySelectorAll('input'))
+            .filter(input => correct.includes(input.value))
+            .map(input => {
+              const label = input.parentElement.querySelector('label');
+              return label ? label.textContent.trim() : input.value;
+            });
+
+          feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
+          feedback.className = 'feedback incorrect';
+        }
+
+        current++;
+        setTimeout(showQuestion, 2000);
+      };
     }
-
-    checkBtn.addEventListener('click', () => {
-      const item = quiz[mode === 'rated' ? questionOrder[current] : usedQuestions[usedQuestions.length - 1]];
-      const selected = Array.from(optionsDiv.querySelectorAll('input:checked'))
-        .map(cb => cb.value);
-      const correct = item.correct;
-
-      const isCorrect = selected.length === correct.length &&
-        selected.every(val => correct.includes(val)) &&
-        correct.every(val => selected.includes(val));
-
-      if (isCorrect) {
-        feedback.textContent = '✅ Správně!';
-        feedback.className = 'feedback correct';
-      } else {
-        errorCount++;
-        document.getElementById('errorCount').textContent = errorCount;
-
-        const correctTexts = Array.from(optionsDiv.querySelectorAll('input'))
-          .filter(input => correct.includes(input.value))
-          .map(input => {
-            const label = input.parentElement.querySelector('label');
-            return label ? label.textContent.trim() : input.value;
-          });
-
-        feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
-        feedback.className = 'feedback incorrect';
-      }
-
-      current++;
-      setTimeout(showQuestion, 2000);
-    });
   </script>
 </body>
 </html>
