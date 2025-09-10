@@ -75,10 +75,27 @@
 <body>
   <h1>Kvíz z Excelu</h1>
 
-  <!-- Vlastní tlačítko pro výběr souboru -->
+  <!-- Výběr režimu -->
+  <div style="margin-bottom: 15px;">
+    <label>
+      <input type="radio" name="mode" value="infinite" checked onchange="switchMode('infinite')"> Nekonečný test
+    </label>
+    <label style="margin-left: 20px;">
+      <input type="radio" name="mode" value="rated" onchange="switchMode('rated')"> Hodnocený test
+    </label>
+  </div>
+
+  <!-- Chyby a reset -->
+  <div style="margin-bottom: 15px;">
+    <strong>Počet chyb:</strong> <span id="errorCount">0</span>
+    <button onclick="resetAll()" style="margin-left: 20px;">🔄 Reset</button>
+  </div>
+
+  <!-- Tlačítko pro soubor -->
   <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
   <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
 
+  <!-- Kvíz -->
   <div id="quizContainer" style="display:none;">
     <div class="question" id="qText"></div>
     <div id="options"></div>
@@ -90,6 +107,9 @@
     let quiz = [];
     let questionOrder = [];
     let current = 0;
+    let mode = 'infinite'; // 'infinite' nebo 'rated'
+    let errorCount = 0;
+    let usedQuestions = [];
 
     const fileInput = document.getElementById('fileInput');
     const quizContainer = document.getElementById('quizContainer');
@@ -115,24 +135,58 @@
           correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
         }));
 
-        questionOrder = shuffleArray([...Array(quiz.length).keys()]);
-        current = 0;
+        resetAll(); // inicializace
         quizContainer.style.display = '';
-        showQuestion();
       });
     });
+
+    function switchMode(selectedMode) {
+      mode = selectedMode;
+      resetAll();
+    }
+
+    function resetAll() {
+      errorCount = 0;
+      document.getElementById('errorCount').textContent = errorCount;
+
+      usedQuestions = [];
+      questionOrder = shuffleArray([...Array(quiz.length).keys()]);
+      current = 0;
+      feedback.textContent = '';
+      checkBtn.disabled = false;
+      showQuestion();
+    }
 
     function showQuestion() {
       feedback.textContent = '';
       optionsDiv.innerHTML = '';
 
-      if (current >= questionOrder.length) {
-        qText.innerText = '🎉 Kvíz dokončen!';
-        checkBtn.disabled = true;
-        return;
+      let questionIndex;
+
+      if (mode === 'rated') {
+        if (current >= questionOrder.length) {
+          qText.innerText = '🎉 Test dokončen!';
+          checkBtn.disabled = true;
+          return;
+        }
+        questionIndex = questionOrder[current];
+      } else {
+        const unused = quiz
+          .map((_, idx) => idx)
+          .filter(idx => !usedQuestions.includes(idx));
+
+        if (unused.length === 0) {
+          usedQuestions = [];
+          questionIndex = Math.floor(Math.random() * quiz.length);
+        } else {
+          const randIdx = Math.floor(Math.random() * unused.length);
+          questionIndex = unused[randIdx];
+        }
+
+        usedQuestions.push(questionIndex);
       }
 
-      const item = quiz[questionOrder[current]];
+      const item = quiz[questionIndex];
       qText.innerText = item.question;
 
       const labeledOptions = item.options.map((text, i) => ({
@@ -165,7 +219,7 @@
     }
 
     checkBtn.addEventListener('click', () => {
-      const item = quiz[questionOrder[current]];
+      const item = quiz[mode === 'rated' ? questionOrder[current] : usedQuestions[usedQuestions.length - 1]];
       const selected = Array.from(optionsDiv.querySelectorAll('input:checked'))
         .map(cb => cb.value);
       const correct = item.correct;
@@ -174,20 +228,23 @@
         selected.every(val => correct.includes(val)) &&
         correct.every(val => selected.includes(val));
 
-     if (isCorrect) {
-  feedback.textContent = '✅ Správně!';
-  feedback.className = 'feedback correct';
-} else {
-  const correctTexts = Array.from(optionsDiv.querySelectorAll('input'))
-    .filter(input => correct.includes(input.value))
-    .map(input => {
-      const label = input.parentElement.querySelector('label');
-      return label ? label.textContent.trim() : input.value;
-    });
+      if (isCorrect) {
+        feedback.textContent = '✅ Správně!';
+        feedback.className = 'feedback correct';
+      } else {
+        errorCount++;
+        document.getElementById('errorCount').textContent = errorCount;
 
-  feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
-  feedback.className = 'feedback incorrect';
-}
+        const correctTexts = Array.from(optionsDiv.querySelectorAll('input'))
+          .filter(input => correct.includes(input.value))
+          .map(input => {
+            const label = input.parentElement.querySelector('label');
+            return label ? label.textContent.trim() : input.value;
+          });
+
+        feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
+        feedback.className = 'feedback incorrect';
+      }
 
       current++;
       setTimeout(showQuestion, 2000);
