@@ -112,10 +112,25 @@
 
     .settings-section {
       border: 1px solid #ddd;
-      padding: 15px 20px;
-      border-radius: 8px;
+      padding: 10px 12px;
+      border-radius: 6px;
       background-color: #f9f9f9;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
+    }
+
+    .settings-section h3 {
+      font-size: 16px;
+      margin: 0 0 8px 0;
+    }
+
+    .radio-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+    }
+
+    .settings-section label {
+      font-size: 15px;
     }
 
     @media (max-width: 480px) {
@@ -140,6 +155,10 @@
 
       label {
         font-size: 16px;
+      }
+
+      .radio-group {
+        grid-template-columns: 1fr; /* přepne do 1 sloupce na malých zařízeních */
       }
     }
 
@@ -213,26 +232,30 @@
   <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
   <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
 
-  <!-- Režim testování -->
+  <!-- Režim testu -->
   <div class="settings-section">
     <h3>Režim testu</h3>
-    <label>
-      <input type="radio" name="mode" value="infinite" checked onchange="switchMode('infinite')"> Nekonečný test
-    </label>
-    <label style="margin-left: 20px;">
-      <input type="radio" name="mode" value="rated" onchange="switchMode('rated')"> Hodnocený test
-    </label>
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="mode" value="infinite" checked onchange="switchMode('infinite')"> Nekonečný test
+      </label>
+      <label>
+        <input type="radio" name="mode" value="rated" onchange="switchMode('rated')"> Hodnocený test
+      </label>
+    </div>
   </div>
 
   <!-- Režim otázek -->
   <div class="settings-section">
     <h3>Režim otázek</h3>
-    <label>
-      <input type="radio" name="questionOrder" value="random" checked onchange="switchQuestionOrder('random')"> Náhodné otázky
-    </label>
-    <label style="margin-left: 20px;">
-      <input type="radio" name="questionOrder" value="sequential" onchange="switchQuestionOrder('sequential')"> Otázky za sebou
-    </label>
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="questionOrder" value="random" checked onchange="switchQuestionOrder('random')"> Náhodné otázky
+      </label>
+      <label>
+        <input type="radio" name="questionOrder" value="sequential" onchange="switchQuestionOrder('sequential')"> Otázky za sebou
+      </label>
+    </div>
   </div>
 
   <!-- Počet chyb -->
@@ -277,133 +300,13 @@
       if (!file) return;
 
       readXlsxFile(file).then(rows => {
-        quiz = rows.slice(1).map(r => ({
+
+          quiz = rows.slice(1).map(r => ({
           question: r[0],
           options: [r[1], r[2], r[3]].filter(Boolean),
-          correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
+          correct: r[4] ? r[4].toString().split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
         }));
 
         resetAll();
         quizContainer.style.display = '';
       });
-    });
-
-    function switchMode(selectedMode) {
-      mode = selectedMode;
-      resetAll();
-    }
-
-    function switchQuestionOrder(orderMode) {
-      questionOrderMode = orderMode;
-      resetAll();
-    }
-
-    function resetAll() {
-      errorCount = 0;
-      errorCountDisplay.textContent = errorCount;
-
-      usedQuestions = [];
-      questionOrder = questionOrderMode === 'random'
-        ? shuffleArray([...Array(quiz.length).keys()])
-        : [...Array(quiz.length).keys()];
-
-      current = 0;
-      feedback.textContent = '';
-      checkBtn.disabled = false;
-      showQuestion();
-    }
-
-    function showQuestion() {
-      feedback.textContent = '';
-      optionsDiv.innerHTML = '';
-
-      let questionIndex;
-
-      if (mode === 'rated') {
-        if (current >= questionOrder.length) {
-          qText.innerText = '🎉 Test dokončen!';
-          checkBtn.disabled = true;
-          return;
-        }
-        questionIndex = questionOrder[current];
-      } else {
-        const unused = quiz
-          .map((_, idx) => idx)
-          .filter(idx => !usedQuestions.includes(idx));
-
-        if (unused.length === 0) {
-          usedQuestions = [];
-          questionIndex = Math.floor(Math.random() * quiz.length);
-        } else {
-          const randIdx = Math.floor(Math.random() * unused.length);
-          questionIndex = unused[randIdx];
-        }
-
-        usedQuestions.push(questionIndex);
-      }
-
-      const item = quiz[questionIndex];
-      qText.innerText = item.question;
-
-      const labeledOptions = item.options.map((text, i) => ({
-        label: String.fromCharCode(65 + i),
-        text: text
-      }));
-
-      const shuffled = shuffleArray(labeledOptions);
-      item.shuffledOptions = shuffled;
-
-      shuffled.forEach((opt, idx) => {
-        const id = `option-${current}-${idx}`;
-
-        const wrapper = document.createElement('div');
-        wrapper.className = 'option';
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = opt.label;
-        checkbox.id = id;
-
-        const label = document.createElement('label');
-        label.setAttribute('for', id);
-        label.textContent = opt.text;
-
-        wrapper.appendChild(checkbox);
-        wrapper.appendChild(label);
-        optionsDiv.appendChild(wrapper);
-      });
-
-      checkBtn.onclick = () => {
-        const selected = Array.from(optionsDiv.querySelectorAll('input:checked'))
-          .map(cb => cb.value);
-        const correct = item.correct;
-
-        const isCorrect = selected.length === correct.length &&
-          selected.every(val => correct.includes(val)) &&
-          correct.every(val => selected.includes(val));
-
-        if (isCorrect) {
-          feedback.textContent = '✅ Správně!';
-          feedback.className = 'feedback correct';
-        } else {
-          errorCount++;
-          errorCountDisplay.textContent = errorCount;
-
-          const correctTexts = Array.from(optionsDiv.querySelectorAll('input'))
-            .filter(input => correct.includes(input.value))
-            .map(input => {
-              const label = input.parentElement.querySelector('label');
-              return label ? label.textContent.trim() : input.value;
-            });
-
-          feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
-          feedback.className = 'feedback incorrect';
-        }
-
-        current++;
-        setTimeout(showQuestion, 2000);
-      };
-    }
-  </script>
-</body>
-</html>
