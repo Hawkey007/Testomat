@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Testomat</title>
   <link rel="icon" href="favicon.png" type="image/png">
   <script src="https://unpkg.com/read-excel-file@5.x/bundle/read-excel-file.min.js"></script>
@@ -28,6 +28,36 @@
       width: 100%;
       box-sizing: border-box;
       text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .mode-container {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .mode-group {
+      flex: 1 1 45%;
+    }
+
+    .mode-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    input[type="radio"] {
+      transform: scale(1.2);
+      margin-right: 8px;
+      cursor: pointer;
     }
 
     .question {
@@ -82,15 +112,6 @@
       box-sizing: border-box;
     }
 
-    input[type="radio"] {
-      transform: scale(1.3);
-      margin-right: 6px;
-    }
-
-    label {
-      font-size: 17px;
-    }
-
     #resetBtn {
       margin: 10px auto 20px auto;
       padding: 10px 18px;
@@ -110,55 +131,29 @@
       background-color: #5a6268;
     }
 
-    .settings-section {
-      border: 1px solid #ddd;
-      padding: 10px 12px;
-      border-radius: 6px;
-      background-color: #f9f9f9;
-      margin-bottom: 15px;
-    }
-
-    .settings-section h3 {
-      font-size: 16px;
-      margin: 0 0 8px 0;
-    }
-
-    .radio-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 12px;
-    }
-
-    .settings-section label {
-      font-size: 15px;
-    }
-
     @media (max-width: 480px) {
-      .upload-btn,
-      button {
+      .mode-container {
+        flex-direction: column;
+      }
+      .mode-group {
+        flex: 1 1 100%;
+      }
+      button, .upload-btn {
         font-size: 16px;
         padding: 10px;
       }
-
       .question {
         font-size: 18px;
       }
-
       .option {
         font-size: 16px;
         padding: 10px;
       }
-
       .feedback {
         font-size: 16px;
       }
-
       label {
         font-size: 16px;
-      }
-
-      .radio-group {
-        grid-template-columns: 1fr; /* přepne do 1 sloupce na malých zařízeních */
       }
     }
 
@@ -217,11 +212,6 @@
       input[type="checkbox"] {
         accent-color: #2196f3;
       }
-
-      .settings-section {
-        border: 1px solid #444;
-        background-color: #1a1a1a;
-      }
     }
   </style>
 </head>
@@ -232,29 +222,17 @@
   <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
   <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
 
-  <!-- Režim testu -->
-  <div class="settings-section">
-    <h3>Režim testu</h3>
-    <div class="radio-group">
-      <label>
-        <input type="radio" name="mode" value="infinite" checked onchange="switchMode('infinite')"> Nekonečný test
-      </label>
-      <label>
-        <input type="radio" name="mode" value="rated" onchange="switchMode('rated')"> Hodnocený test
-      </label>
+  <!-- Režimy (test a otázky) -->
+  <div class="mode-container">
+    <div class="mode-group">
+      <h2>Režim testu</h2>
+      <label><input type="radio" name="mode" value="infinite" checked> Nekonečný test</label>
+      <label><input type="radio" name="mode" value="rated"> Hodnocený test</label>
     </div>
-  </div>
-
-  <!-- Režim otázek -->
-  <div class="settings-section">
-    <h3>Režim otázek</h3>
-    <div class="radio-group">
-      <label>
-        <input type="radio" name="questionOrder" value="random" checked onchange="switchQuestionOrder('random')"> Náhodné otázky
-      </label>
-      <label>
-        <input type="radio" name="questionOrder" value="sequential" onchange="switchQuestionOrder('sequential')"> Otázky za sebou
-      </label>
+    <div class="mode-group">
+      <h2>Režim otázek</h2>
+      <label><input type="radio" name="questionOrder" value="random" checked> Náhodné otázky</label>
+      <label><input type="radio" name="questionOrder" value="sequential"> Otázky za sebou</label>
     </div>
   </div>
 
@@ -276,8 +254,8 @@
     let quiz = [];
     let questionOrder = [];
     let current = 0;
-    let mode = 'infinite';
-    let questionOrderMode = 'random';
+    let mode = 'infinite';           // Režim testu
+    let questionOrderMode = 'random'; // Režim otázek
     let errorCount = 0;
     let usedQuestions = [];
 
@@ -290,18 +268,19 @@
     const errorCountDisplay = document.getElementById('errorCount');
 
     function shuffleArray(array) {
-      return array.map(value => ({ value, sort: Math.random() }))
-                  .sort((a, b) => a.sort - b.sort)
-                  .map(({ value }) => value);
+      return array
+        .map(value => ({ value, sort: Math.random() }))
+        .sort((a, b) => a.sort - b.sort)
+        .map(({ value }) => value);
     }
 
+    // Načtení souboru a zpracování otázek
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
       if (!file) return;
 
       readXlsxFile(file).then(rows => {
-
-          quiz = rows.slice(1).map(r => ({
+        quiz = rows.slice(1).map(r => ({
           question: r[0],
           options: [r[1], r[2], r[3]].filter(Boolean),
           correct: r[4] ? r[4].toString().split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
@@ -309,4 +288,150 @@
 
         resetAll();
         quizContainer.style.display = '';
+      }).catch(err => {
+        alert("Chyba při načítání souboru: " + err.message);
       });
+    });
+
+    // Přepínač režimu testu
+    document.querySelectorAll('input[name="mode"]').forEach(radio => {
+      radio.addEventListener('change', e => {
+        mode = e.target.value;
+        resetAll();
+      });
+    });
+
+    // Přepínač režimu otázek
+    document.querySelectorAll('input[name="questionOrder"]').forEach(radio => {
+      radio.addEventListener('change', e => {
+        questionOrderMode = e.target.value;
+        resetAll();
+      });
+    });
+
+    // Reset testu a příprava otázek
+    function resetAll() {
+      errorCount = 0;
+      errorCountDisplay.textContent = errorCount;
+      usedQuestions = [];
+
+      // Nastavení pořadí otázek dle režimu
+      questionOrder = questionOrderMode === 'random'
+        ? shuffleArray([...Array(quiz.length).keys()])
+        : [...Array(quiz.length).keys()];
+
+      current = 0;
+      feedback.textContent = '';
+      checkBtn.disabled = false;
+      showQuestion();
+    }
+
+    // Zobraz aktuální otázku
+    function showQuestion() {
+      feedback.textContent = '';
+      optionsDiv.innerHTML = '';
+
+      let questionIndex;
+
+      if (mode === 'rated') {
+        // Hodnocený test - otázky za sebou
+        if (current >= questionOrder.length) {
+          qText.innerText = '🎉 Test dokončen!';
+          checkBtn.disabled = true;
+          return;
+        }
+        questionIndex = questionOrder[current];
+      } else {
+        // Nekonečný test - náhodné otázky
+        const unused = quiz
+          .map((_, idx) => idx)
+          .filter(idx => !usedQuestions.includes(idx));
+
+        if (unused.length === 0) {
+          usedQuestions = [];
+          questionIndex = Math.floor(Math.random() * quiz.length);
+        } else {
+          const randIdx = Math.floor(Math.random() * unused.length);
+          questionIndex = unused[randIdx];
+        }
+
+        usedQuestions.push(questionIndex);
+      }
+
+      const item = quiz[questionIndex];
+      qText.innerText = item.question;
+
+      // Označené možnosti (A, B, C)
+      const labeledOptions = item.options.map((text, i) => ({
+        label: String.fromCharCode(65 + i),
+        text: text
+      }));
+
+      // Zamíchat možnosti (checkboxy)
+      const shuffled = shuffleArray(labeledOptions);
+      item.shuffledOptions = shuffled;
+
+      shuffled.forEach((opt, idx) => {
+        const id = `option-${current}-${idx}`;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'option';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = opt.label;
+        checkbox.id = id;
+
+        const label = document.createElement('label');
+        label.setAttribute('for', id);
+        label.textContent = opt.text;
+
+        wrapper.appendChild(checkbox);
+        wrapper.appendChild(label);
+        optionsDiv.appendChild(wrapper);
+      });
+
+      checkBtn.onclick = () => {
+        const selected = Array.from(optionsDiv.querySelectorAll('input:checked'))
+          .map(cb => cb.value);
+        const correct = item.correct;
+
+        const isCorrect = selected.length === correct.length &&
+          selected.every(val => correct.includes(val)) &&
+          correct.every(val => selected.includes(val));
+
+        if (isCorrect) {
+          feedback.textContent = '✅ Správně!';
+          feedback.className = 'feedback correct';
+          if (mode === 'rated') {
+            current++;
+          }
+        } else {
+          feedback.textContent = '❌ Špatně!';
+          feedback.className = 'feedback incorrect';
+          errorCount++;
+          errorCountDisplay.textContent = errorCount;
+          if (mode === 'rated') {
+            // Pokračuj stejnou otázkou
+          } else {
+            current++;
+          }
+        }
+
+        // V nekonečném režimu jdi dál
+        if (mode === 'infinite') {
+          showQuestion();
+        } else if (mode === 'rated') {
+          if (current >= questionOrder.length) {
+            qText.innerText = '🎉 Test dokončen!';
+            checkBtn.disabled = true;
+            optionsDiv.innerHTML = '';
+          } else {
+            showQuestion();
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html>
