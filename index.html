@@ -110,6 +110,14 @@
       background-color: #5a6268;
     }
 
+    .settings-section {
+      border: 1px solid #ddd;
+      padding: 15px 20px;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+      margin-bottom: 20px;
+    }
+
     @media (max-width: 480px) {
       .upload-btn,
       button {
@@ -190,23 +198,40 @@
       input[type="checkbox"] {
         accent-color: #2196f3;
       }
+
+      .settings-section {
+        border: 1px solid #444;
+        background-color: #1a1a1a;
+      }
     }
   </style>
 </head>
 <body>
   <h1>Testomat</h1>
-  
+
   <!-- Výběr souboru -->
   <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
   <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
-  
+
   <!-- Režim testování -->
-  <div style="margin-bottom: 15px;">
+  <div class="settings-section">
+    <h3>Režim testu</h3>
     <label>
       <input type="radio" name="mode" value="infinite" checked onchange="switchMode('infinite')"> Nekonečný test
     </label>
     <label style="margin-left: 20px;">
       <input type="radio" name="mode" value="rated" onchange="switchMode('rated')"> Hodnocený test
+    </label>
+  </div>
+
+  <!-- Režim otázek -->
+  <div class="settings-section">
+    <h3>Režim otázek</h3>
+    <label>
+      <input type="radio" name="questionOrder" value="random" checked onchange="switchQuestionOrder('random')"> Náhodné otázky
+    </label>
+    <label style="margin-left: 20px;">
+      <input type="radio" name="questionOrder" value="sequential" onchange="switchQuestionOrder('sequential')"> Otázky za sebou
     </label>
   </div>
 
@@ -229,6 +254,7 @@
     let questionOrder = [];
     let current = 0;
     let mode = 'infinite';
+    let questionOrderMode = 'random';
     let errorCount = 0;
     let usedQuestions = [];
 
@@ -267,12 +293,20 @@
       resetAll();
     }
 
+    function switchQuestionOrder(orderMode) {
+      questionOrderMode = orderMode;
+      resetAll();
+    }
+
     function resetAll() {
       errorCount = 0;
       errorCountDisplay.textContent = errorCount;
 
       usedQuestions = [];
-      questionOrder = shuffleArray([...Array(quiz.length).keys()]);
+      questionOrder = questionOrderMode === 'random'
+        ? shuffleArray([...Array(quiz.length).keys()])
+        : [...Array(quiz.length).keys()];
+
       current = 0;
       feedback.textContent = '';
       checkBtn.disabled = false;
