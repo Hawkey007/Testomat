@@ -2,9 +2,9 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Testomat</title>
-  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="icon" href="favicon.png" type="image/png" />
   <script src="https://unpkg.com/read-excel-file@5.x/bundle/read-excel-file.min.js"></script>
   <style>
     body {
@@ -15,7 +15,6 @@
       background-color: #fdfdfd;
       color: #222;
     }
-
     .upload-btn {
       display: inline-block;
       background-color: #007bff;
@@ -29,43 +28,11 @@
       box-sizing: border-box;
       text-align: center;
     }
-
-    h2 {
-      margin-bottom: 8px;
-      font-weight: 600;
-      font-size: 18px;
-    }
-
-    .mode-container {
-      display: flex;
-      gap: 40px;
-      margin-bottom: 15px;
-      flex-wrap: wrap;
-    }
-
-    .mode-group {
-      flex: 1 1 45%;
-    }
-
-    .mode-group label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    input[type="radio"] {
-      transform: scale(1.2);
-      margin-right: 8px;
-      cursor: pointer;
-    }
-
     .question {
       margin-bottom: 20px;
       font-size: 20px;
       font-weight: bold;
     }
-
     .option {
       display: flex;
       align-items: center;
@@ -78,31 +45,25 @@
       font-size: 18px;
       background-color: #fff;
     }
-
     .option:hover {
       background-color: #f0f0f0;
     }
-
     .option input[type="checkbox"] {
       margin-right: 14px;
       transform: scale(1.4);
       cursor: pointer;
     }
-
     .feedback {
       font-weight: bold;
       margin-top: 15px;
       font-size: 18px;
     }
-
     .correct {
       color: #28a745;
     }
-
     .incorrect {
       color: #dc3545;
     }
-
     button {
       margin-top: 20px;
       padding: 12px 20px;
@@ -111,34 +72,51 @@
       width: 100%;
       box-sizing: border-box;
     }
-
+    input[type="radio"] {
+      transform: scale(1.3);
+      margin-right: 6px;
+    }
+    label {
+      font-size: 17px;
+    }
     #resetBtn {
-      margin: 10px auto 20px auto;
-      padding: 10px 18px;
-      font-size: 16px;
-      display: block;
+      margin: 0;
+      padding: 12px 20px;
+      font-size: 18px;
       background-color: #6c757d;
       color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       width: auto;
-      max-width: 200px;
-      text-align: center;
+      box-sizing: border-box;
     }
-
     #resetBtn:hover {
       background-color: #5a6268;
     }
-
+    .mode-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      gap: 20px;
+    }
+    .mode-section {
+      flex: 1;
+    }
+    .mode-section label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: normal;
+      font-size: 15px;
+    }
+    h2 {
+      font-size: 18px;
+      margin: 0 0 6px 0;
+    }
     @media (max-width: 480px) {
-      .mode-container {
-        flex-direction: column;
-      }
-      .mode-group {
-        flex: 1 1 100%;
-      }
-      button, .upload-btn {
+      .upload-btn,
+      button,
+      #resetBtn {
         font-size: 16px;
         padding: 10px;
       }
@@ -155,59 +133,54 @@
       label {
         font-size: 16px;
       }
+      .mode-container {
+        flex-direction: column;
+      }
+      #resetBtn {
+        margin-top: 10px;
+        width: 100%;
+      }
     }
-
     @media (prefers-color-scheme: dark) {
       body {
         background-color: #121212;
         color: #e0e0e0;
       }
-
       .upload-btn {
         background-color: #2196f3;
         color: white;
       }
-
       .option {
         background-color: #1e1e1e;
         border: 1px solid #444;
       }
-
       .option:hover {
         background-color: #2a2a2a;
       }
-
       .feedback {
         color: #e0e0e0;
       }
-
       .correct {
         color: #6fbf73;
       }
-
       .incorrect {
         color: #ef5350;
       }
-
       button {
         background-color: #333;
         color: white;
         border: 1px solid #444;
       }
-
       button:hover {
         background-color: #444;
       }
-
       #resetBtn {
         background-color: #444;
         color: white;
       }
-
       #resetBtn:hover {
         background-color: #555;
       }
-
       input[type="radio"],
       input[type="checkbox"] {
         accent-color: #2196f3;
@@ -218,31 +191,31 @@
 <body>
   <h1>Testomat</h1>
 
-  <!-- Výběr souboru -->
-  <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
-  <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
-
-  <!-- Režimy (test a otázky) -->
   <div class="mode-container">
-    <div class="mode-group">
+    <div class="mode-section" style="max-width: 280px;">
       <h2>Režim testu</h2>
-      <label><input type="radio" name="mode" value="infinite" checked> Nekonečný test</label>
-      <label><input type="radio" name="mode" value="rated"> Hodnocený test</label>
+      <label><input type="radio" name="mode" value="infinite" checked onchange="switchMode('infinite')"> Nekonečný test</label>
+      <label><input type="radio" name="mode" value="rated" onchange="switchMode('rated')"> Hodnocený test</label>
     </div>
-    <div class="mode-group">
+
+    <div class="mode-section" style="max-width: 280px;">
       <h2>Režim otázek</h2>
-      <label><input type="radio" name="questionOrder" value="random" checked> Náhodné otázky</label>
-      <label><input type="radio" name="questionOrder" value="sequential"> Otázky za sebou</label>
+      <label><input type="radio" name="questionOrder" value="random" checked onchange="switchQuestionOrder('random')"> Náhodné otázky</label>
+      <label><input type="radio" name="questionOrder" value="sequential" onchange="switchQuestionOrder('sequential')"> Otázky za sebou</label>
+    </div>
+
+    <div style="display: flex; align-items: center;">
+      <label for="fileInput" class="upload-btn" style="margin: 0; flex-grow: 1; cursor: pointer;">📂 Vybrat soubor</label>
+      <button id="resetBtn" onclick="resetAll()">🔄 Reset</button>
     </div>
   </div>
 
-  <!-- Počet chyb -->
+  <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
+
   <div style="margin-bottom: 5px;">
     <strong>Počet chyb:</strong> <span id="errorCount">0</span>
   </div>
-  <button id="resetBtn" onclick="resetAll()">🔄 Reset</button>
 
-  <!-- Kvíz -->
   <div id="quizContainer" style="display:none;">
     <div class="question" id="qText"></div>
     <div id="options"></div>
@@ -254,10 +227,10 @@
     let quiz = [];
     let questionOrder = [];
     let current = 0;
-    let mode = 'infinite';           // Režim testu
-    let questionOrderMode = 'random'; // Režim otázek
+    let mode = 'infinite';
     let errorCount = 0;
     let usedQuestions = [];
+    let questionOrderMode = 'random';
 
     const fileInput = document.getElementById('fileInput');
     const quizContainer = document.getElementById('quizContainer');
@@ -268,13 +241,11 @@
     const errorCountDisplay = document.getElementById('errorCount');
 
     function shuffleArray(array) {
-      return array
-        .map(value => ({ value, sort: Math.random() }))
-        .sort((a, b) => a.sort - b.sort)
-        .map(({ value }) => value);
+      return array.map(value => ({ value, sort: Math.random() }))
+                  .sort((a, b) => a.sort - b.sort)
+                  .map(({ value }) => value);
     }
 
-    // Načtení souboru a zpracování otázek
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
       if (!file) return;
@@ -283,58 +254,49 @@
         quiz = rows.slice(1).map(r => ({
           question: r[0],
           options: [r[1], r[2], r[3]].filter(Boolean),
-          correct: r[4] ? r[4].toString().split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
+          correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
         }));
 
         resetAll();
         quizContainer.style.display = '';
-      }).catch(err => {
-        alert("Chyba při načítání souboru: " + err.message);
       });
     });
 
-    // Přepínač režimu testu
-    document.querySelectorAll('input[name="mode"]').forEach(radio => {
-      radio.addEventListener('change', e => {
-        mode = e.target.value;
-        resetAll();
-      });
-    });
+    function switchMode(selectedMode) {
+      mode = selectedMode;
+      resetAll();
+    }
 
-    // Přepínač režimu otázek
-    document.querySelectorAll('input[name="questionOrder"]').forEach(radio => {
-      radio.addEventListener('change', e => {
-        questionOrderMode = e.target.value;
-        resetAll();
-      });
-    });
+    function switchQuestionOrder(selectedOrder) {
+      questionOrderMode = selectedOrder;
+      resetAll();
+    }
 
-    // Reset testu a příprava otázek
     function resetAll() {
       errorCount = 0;
       errorCountDisplay.textContent = errorCount;
+
       usedQuestions = [];
-
-      // Nastavení pořadí otázek dle režimu
-      questionOrder = questionOrderMode === 'random'
-        ? shuffleArray([...Array(quiz.length).keys()])
-        : [...Array(quiz.length).keys()];
-
+      if (questionOrderMode === 'sequential') {
+        questionOrder = [...Array(quiz.length).keys()];
+      } else {
+        questionOrder = shuffleArray([...Array(quiz.length).keys()]);
+      }
       current = 0;
       feedback.textContent = '';
       checkBtn.disabled = false;
       showQuestion();
     }
 
-    // Zobraz aktuální otázku
     function showQuestion() {
       feedback.textContent = '';
       optionsDiv.innerHTML = '';
 
+      if (quiz.length === 0) return;
+
       let questionIndex;
 
       if (mode === 'rated') {
-        // Hodnocený test - otázky za sebou
         if (current >= questionOrder.length) {
           qText.innerText = '🎉 Test dokončen!';
           checkBtn.disabled = true;
@@ -342,7 +304,6 @@
         }
         questionIndex = questionOrder[current];
       } else {
-        // Nekonečný test - náhodné otázky
         const unused = quiz
           .map((_, idx) => idx)
           .filter(idx => !usedQuestions.includes(idx));
@@ -361,13 +322,11 @@
       const item = quiz[questionIndex];
       qText.innerText = item.question;
 
-      // Označené možnosti (A, B, C)
       const labeledOptions = item.options.map((text, i) => ({
         label: String.fromCharCode(65 + i),
         text: text
       }));
 
-      // Zamíchat možnosti (checkboxy)
       const shuffled = shuffleArray(labeledOptions);
       item.shuffledOptions = shuffled;
 
@@ -403,33 +362,23 @@
         if (isCorrect) {
           feedback.textContent = '✅ Správně!';
           feedback.className = 'feedback correct';
-          if (mode === 'rated') {
-            current++;
-          }
         } else {
-          feedback.textContent = '❌ Špatně!';
-          feedback.className = 'feedback incorrect';
           errorCount++;
           errorCountDisplay.textContent = errorCount;
-          if (mode === 'rated') {
-            // Pokračuj stejnou otázkou
-          } else {
-            current++;
-          }
+
+          const correctTexts = Array.from(optionsDiv.querySelectorAll('input'))
+            .filter(input => correct.includes(input.value))
+            .map(input => {
+              const label = input.parentElement.querySelector('label');
+              return label ? label.textContent.trim() : input.value;
+            });
+
+          feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
+          feedback.className = 'feedback incorrect';
         }
 
-        // V nekonečném režimu jdi dál
-        if (mode === 'infinite') {
-          showQuestion();
-        } else if (mode === 'rated') {
-          if (current >= questionOrder.length) {
-            qText.innerText = '🎉 Test dokončen!';
-            checkBtn.disabled = true;
-            optionsDiv.innerHTML = '';
-          } else {
-            showQuestion();
-          }
-        }
+        current++;
+        setTimeout(showQuestion, 2000);
       };
     }
   </script>
