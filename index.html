@@ -120,12 +120,14 @@
 <body>
   <h1>Testomat</h1>
 
+  <!-- Tlačítka -->
   <div class="top-bar">
     <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
     <button id="resetBtn" onclick="resetAll()">🔄 Reset</button>
   </div>
   <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
 
+  <!-- Přepínače -->
   <div class="modes">
     <div class="mode-section">
       <h2>Režim testu</h2>
@@ -139,10 +141,12 @@
     </div>
   </div>
 
+  <!-- Počet chyb -->
   <div style="margin-bottom: 10px;">
     <strong>Počet chyb:</strong> <span id="errorCount">0</span>
   </div>
 
+  <!-- Kvíz -->
   <div id="quizContainer" style="display:none;">
     <div class="question" id="qText"></div>
     <div id="options"></div>
@@ -230,6 +234,7 @@
         }
         questionIndex = questionOrder[current];
       } else {
+        // Náhodný režim
         const unused = quiz.map((_, i) => i).filter(i => !usedQuestions.includes(i));
         questionIndex = unused.length === 0
           ? Math.floor(Math.random() * quiz.length)
