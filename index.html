@@ -1,146 +1,300 @@
-<script>
-  let quiz = [];
-  let questionOrder = [];
-  let current = 0;
-  let mode = 'infinite';
-  let errorCount = 0;
-  let usedQuestions = [];
-  let questionOrderMode = 'random';
-
-  const fileInput = document.getElementById('fileInput');
-  const quizContainer = document.getElementById('quizContainer');
-  const qText = document.getElementById('qText');
-  const optionsDiv = document.getElementById('options');
-  const checkBtn = document.getElementById('checkBtn');
-  const feedback = document.getElementById('feedback');
-  const errorCountDisplay = document.getElementById('errorCount');
-
-  function shuffleArray(array) {
-    return array.map(value => ({ value, sort: Math.random() }))
-                .sort((a, b) => a.sort - b.sort)
-                .map(({ value }) => value);
-  }
-
-  fileInput.addEventListener('change', () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    readXlsxFile(file).then(rows => {
-      quiz = rows.slice(1).map(r => ({
-        question: r[0],
-        options: [r[1], r[2], r[3]].filter(Boolean),
-        correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
-      }));
-
-      resetAll();
-      quizContainer.style.display = '';
-    });
-  });
-
-  function switchMode(selectedMode) {
-    mode = selectedMode;
-    resetAll();
-  }
-
-  function switchQuestionOrder(selectedOrder) {
-    questionOrderMode = selectedOrder;
-    resetAll();
-  }
-
-  function resetAll() {
-    errorCount = 0;
-    errorCountDisplay.textContent = errorCount;
-
-    usedQuestions = [];
-    questionOrder = questionOrderMode === 'sequential'
-      ? [...Array(quiz.length).keys()]
-      : shuffleArray([...Array(quiz.length).keys()]);
-
-    current = 0;
-    feedback.textContent = '';
-    checkBtn.disabled = false;
-    showQuestion();
-  }
-
-  function showQuestion() {
-    feedback.textContent = '';
-    optionsDiv.innerHTML = '';
-
-    if (quiz.length === 0) return;
-
-    let questionIndex;
-
-    if (questionOrderMode === 'sequential') {
-      if (current >= questionOrder.length) {
-        qText.innerText = '🎉 Test dokončen!';
-        checkBtn.disabled = true;
-        return;
-      }
-      questionIndex = questionOrder[current];
-    } else {
-      const unused = quiz.map((_, i) => i).filter(i => !usedQuestions.includes(i));
-      questionIndex = unused.length === 0
-        ? Math.floor(Math.random() * quiz.length)
-        : unused[Math.floor(Math.random() * unused.length)];
-      usedQuestions.push(questionIndex);
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testomat</title>
+  <link rel="icon" href="favicon.png" type="image/png" />
+  <script src="https://unpkg.com/read-excel-file@5.x/bundle/read-excel-file.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0 auto;
+      max-width: 700px;
+      background-color: #121212;
+      color: #e0e0e0;
     }
 
-    const item = quiz[questionIndex];
-    qText.innerText = item.question;
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      gap: 10px;
+    }
 
-    const labeledOptions = item.options.map((text, i) => ({
-      label: String.fromCharCode(65 + i),
-      text: text
-    }));
+    .upload-btn, #resetBtn {
+      flex: 1;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+      color: white;
+      background-color: #2196f3;
+    }
 
-    const shuffled = shuffleArray(labeledOptions);
-    item.shuffledOptions = shuffled;
+    #resetBtn {
+      background-color: #757575;
+    }
 
-    shuffled.forEach((opt, idx) => {
-      const id = `option-${current}-${idx}`;
+    .modes {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      gap: 20px;
+    }
 
-      const wrapper = document.createElement('div');
-      wrapper.className = 'option';
+    .mode-section {
+      flex: 1;
+    }
 
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.value = opt.label;
-      checkbox.id = id;
+    .mode-section h2 {
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
 
-      const label = document.createElement('label');
-      label.setAttribute('for', id);
-      label.textContent = opt.text;
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 16px;
+    }
 
-      wrapper.appendChild(checkbox);
-      wrapper.appendChild(label);
-      optionsDiv.appendChild(wrapper);
+    .question {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 20px 0 10px 0;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #1e1e1e;
+      cursor: pointer;
+    }
+
+    .option:hover {
+      background-color: #2a2a2a;
+    }
+
+    .option input {
+      margin-right: 10px;
+      transform: scale(1.4);
+      cursor: pointer;
+    }
+
+    .feedback {
+      font-weight: bold;
+      font-size: 18px;
+      margin: 15px 0;
+    }
+
+    .correct {
+      color: #4caf50;
+    }
+
+    .incorrect {
+      color: #f44336;
+    }
+
+    #checkBtn {
+      padding: 12px;
+      font-size: 18px;
+      width: 100%;
+      cursor: pointer;
+      background-color: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+
+    #checkBtn:hover {
+      background-color: #1976d2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Testomat</h1>
+
+  <div class="top-bar">
+    <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
+    <button id="resetBtn" onclick="resetAll()">🔄 Reset</button>
+  </div>
+  <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
+
+  <div class="modes">
+    <div class="mode-section">
+      <h2>Režim testu</h2>
+      <label><input type="radio" name="mode" value="infinite" checked onchange="switchMode('infinite')"> Nekonečný</label>
+      <label><input type="radio" name="mode" value="rated" onchange="switchMode('rated')"> Hodnocený</label>
+    </div>
+    <div class="mode-section">
+      <h2>Režim otázek</h2>
+      <label><input type="radio" name="questionOrder" value="random" checked onchange="switchQuestionOrder('random')"> Náhodné</label>
+      <label><input type="radio" name="questionOrder" value="sequential" onchange="switchQuestionOrder('sequential')"> Za sebou</label>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 10px;">
+    <strong>Počet chyb:</strong> <span id="errorCount">0</span>
+  </div>
+
+  <div id="quizContainer" style="display:none;">
+    <div class="question" id="qText"></div>
+    <div id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button id="checkBtn">Ověřit</button>
+  </div>
+
+  <script>
+    let quiz = [];
+    let questionOrder = [];
+    let current = 0;
+    let mode = 'infinite';
+    let errorCount = 0;
+    let usedQuestions = [];
+    let questionOrderMode = 'random';
+
+    const fileInput = document.getElementById('fileInput');
+    const quizContainer = document.getElementById('quizContainer');
+    const qText = document.getElementById('qText');
+    const optionsDiv = document.getElementById('options');
+    const checkBtn = document.getElementById('checkBtn');
+    const feedback = document.getElementById('feedback');
+    const errorCountDisplay = document.getElementById('errorCount');
+
+    function shuffleArray(array) {
+      return array.map(value => ({ value, sort: Math.random() }))
+                  .sort((a, b) => a.sort - b.sort)
+                  .map(({ value }) => value);
+    }
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      readXlsxFile(file).then(rows => {
+        quiz = rows.slice(1).map(r => ({
+          question: r[0],
+          options: [r[1], r[2], r[3]].filter(Boolean),
+          correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
+        }));
+
+        resetAll();
+        quizContainer.style.display = '';
+      });
     });
 
-    checkBtn.onclick = () => {
-      const selected = Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value);
-      const correct = item.correct;
+    function switchMode(selectedMode) {
+      mode = selectedMode;
+      resetAll();
+    }
 
-      const isCorrect = selected.length === correct.length &&
-                        selected.every(val => correct.includes(val)) &&
-                        correct.every(val => selected.includes(val));
+    function switchQuestionOrder(selectedOrder) {
+      questionOrderMode = selectedOrder;
+      resetAll();
+    }
 
-      if (isCorrect) {
-        feedback.textContent = '✅ Správně!';
-        feedback.className = 'feedback correct';
+    function resetAll() {
+      errorCount = 0;
+      errorCountDisplay.textContent = errorCount;
+
+      usedQuestions = [];
+      questionOrder = questionOrderMode === 'sequential'
+        ? [...Array(quiz.length).keys()]
+        : shuffleArray([...Array(quiz.length).keys()]);
+
+      current = 0;
+      feedback.textContent = '';
+      checkBtn.disabled = false;
+      showQuestion();
+    }
+
+    function showQuestion() {
+      feedback.textContent = '';
+      optionsDiv.innerHTML = '';
+
+      if (quiz.length === 0) return;
+
+      let questionIndex;
+
+      if (questionOrderMode === 'sequential') {
+        if (current >= questionOrder.length) {
+          qText.innerText = '🎉 Test dokončen!';
+          checkBtn.disabled = true;
+          return;
+        }
+        questionIndex = questionOrder[current];
       } else {
-        errorCount++;
-        errorCountDisplay.textContent = errorCount;
-
-        const correctTexts = item.shuffledOptions
-          .filter(opt => correct.includes(opt.label))
-          .map(opt => opt.text);
-
-        feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
-        feedback.className = 'feedback incorrect';
+        const unused = quiz.map((_, i) => i).filter(i => !usedQuestions.includes(i));
+        questionIndex = unused.length === 0
+          ? Math.floor(Math.random() * quiz.length)
+          : unused[Math.floor(Math.random() * unused.length)];
+        usedQuestions.push(questionIndex);
       }
 
-      current++;
-      setTimeout(showQuestion, 2000);
-    };
-  }
-</script>
+      const item = quiz[questionIndex];
+      qText.innerText = item.question;
+
+      const labeledOptions = item.options.map((text, i) => ({
+        label: String.fromCharCode(65 + i),
+        text: text
+      }));
+
+      const shuffled = shuffleArray(labeledOptions);
+      item.shuffledOptions = shuffled;
+
+      shuffled.forEach((opt, idx) => {
+        const id = `option-${current}-${idx}`;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'option';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = opt.label;
+        checkbox.id = id;
+
+        const label = document.createElement('label');
+        label.setAttribute('for', id);
+        label.textContent = opt.text;
+
+        wrapper.appendChild(checkbox);
+        wrapper.appendChild(label);
+        optionsDiv.appendChild(wrapper);
+      });
+
+      checkBtn.onclick = () => {
+        const selected = Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value);
+        const correct = item.correct;
+
+        const isCorrect = selected.length === correct.length &&
+                          selected.every(val => correct.includes(val)) &&
+                          correct.every(val => selected.includes(val));
+
+        if (isCorrect) {
+          feedback.textContent = '✅ Správně!';
+          feedback.className = 'feedback correct';
+        } else {
+          errorCount++;
+          errorCountDisplay.textContent = errorCount;
+
+          const correctTexts = item.shuffledOptions
+            .filter(opt => correct.includes(opt.label))
+            .map(opt => opt.text);
+
+          feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
+          feedback.className = 'feedback incorrect';
+        }
+
+        current++;
+        setTimeout(showQuestion, 2000);
+      };
+    }
+  </script>
+</body>
+</html>
