@@ -188,6 +188,10 @@
           correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
         }));
 
+        // 🛠 OPRAVA – správné nastavení režimu otázek podle radio buttonu
+        const selectedOrder = document.querySelector('input[name="questionOrder"]:checked').value;
+        questionOrderMode = selectedOrder;
+
         resetAll();
         quizContainer.style.display = '';
       });
@@ -234,7 +238,6 @@
         }
         questionIndex = questionOrder[current];
       } else {
-        // Náhodný režim
         const unused = quiz.map((_, i) => i).filter(i => !usedQuestions.includes(i));
         questionIndex = unused.length === 0
           ? Math.floor(Math.random() * quiz.length)
