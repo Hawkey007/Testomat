@@ -15,14 +15,12 @@
       background-color: #121212;
       color: #e0e0e0;
     }
-
     .top-bar {
       display: flex;
       justify-content: space-between;
       margin-bottom: 15px;
       gap: 10px;
     }
-
     .upload-btn, #resetBtn {
       flex: 1;
       padding: 12px 20px;
@@ -33,39 +31,32 @@
       color: white;
       background-color: #2196f3;
     }
-
     #resetBtn {
       background-color: #757575;
     }
-
     .modes {
       display: flex;
       justify-content: space-between;
       margin-bottom: 15px;
       gap: 20px;
     }
-
     .mode-section {
       flex: 1;
     }
-
     .mode-section h2 {
       font-size: 18px;
       margin-bottom: 6px;
     }
-
     label {
       display: block;
       margin-bottom: 5px;
       font-size: 16px;
     }
-
     .question {
       font-size: 20px;
       font-weight: bold;
       margin: 20px 0 10px 0;
     }
-
     .option {
       display: flex;
       align-items: center;
@@ -76,31 +67,25 @@
       background-color: #1e1e1e;
       cursor: pointer;
     }
-
     .option:hover {
       background-color: #2a2a2a;
     }
-
     .option input {
       margin-right: 10px;
       transform: scale(1.4);
       cursor: pointer;
     }
-
     .feedback {
       font-weight: bold;
       font-size: 18px;
       margin: 15px 0;
     }
-
     .correct {
       color: #4caf50;
     }
-
     .incorrect {
       color: #f44336;
     }
-
     #checkBtn {
       padding: 12px;
       font-size: 18px;
@@ -111,7 +96,6 @@
       border: none;
       border-radius: 6px;
     }
-
     #checkBtn:hover {
       background-color: #1976d2;
     }
@@ -120,14 +104,12 @@
 <body>
   <h1>Testomat</h1>
 
-  <!-- Tlačítka -->
   <div class="top-bar">
     <label for="fileInput" class="upload-btn">📂 Vybrat soubor</label>
     <button id="resetBtn" onclick="resetAll()">🔄 Reset</button>
   </div>
   <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
 
-  <!-- Přepínače -->
   <div class="modes">
     <div class="mode-section">
       <h2>Režim testu</h2>
@@ -141,12 +123,10 @@
     </div>
   </div>
 
-  <!-- Počet chyb -->
   <div style="margin-bottom: 10px;">
     <strong>Počet chyb:</strong> <span id="errorCount">0</span>
   </div>
 
-  <!-- Kvíz -->
   <div id="quizContainer" style="display:none;">
     <div class="question" id="qText"></div>
     <div id="options"></div>
@@ -157,11 +137,13 @@
   <script>
     let quiz = [];
     let questionOrder = [];
+    let questionQueue = [];
     let current = 0;
     let mode = 'infinite';
     let errorCount = 0;
-    let usedQuestions = [];
     let questionOrderMode = 'random';
+
+    const retryDelay = 2; // 🛠️ Po kolika otázkách se má chyba znovu objevit
 
     const fileInput = document.getElementById('fileInput');
     const quizContainer = document.getElementById('quizContainer');
@@ -185,10 +167,10 @@
         quiz = rows.slice(1).map(r => ({
           question: r[0],
           options: [r[1], r[2], r[3]].filter(Boolean),
-          correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
+          correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : [],
+          attempts: 0
         }));
 
-        // 🛠 OPRAVA – správné nastavení režimu otázek podle radio buttonu
         const selectedOrder = document.querySelector('input[name="questionOrder"]:checked').value;
         questionOrderMode = selectedOrder;
 
@@ -210,15 +192,15 @@
     function resetAll() {
       errorCount = 0;
       errorCountDisplay.textContent = errorCount;
+      current = 0;
+      feedback.textContent = '';
+      checkBtn.disabled = false;
 
-      usedQuestions = [];
       questionOrder = questionOrderMode === 'sequential'
         ? [...Array(quiz.length).keys()]
         : shuffleArray([...Array(quiz.length).keys()]);
 
-      current = 0;
-      feedback.textContent = '';
-      checkBtn.disabled = false;
+      questionQueue = [...questionOrder];
       showQuestion();
     }
 
@@ -226,25 +208,13 @@
       feedback.textContent = '';
       optionsDiv.innerHTML = '';
 
-      if (quiz.length === 0) return;
-
-      let questionIndex;
-
-      if (questionOrderMode === 'sequential') {
-        if (current >= questionOrder.length) {
-          qText.innerText = '🎉 Test dokončen!';
-          checkBtn.disabled = true;
-          return;
-        }
-        questionIndex = questionOrder[current];
-      } else {
-        const unused = quiz.map((_, i) => i).filter(i => !usedQuestions.includes(i));
-        questionIndex = unused.length === 0
-          ? Math.floor(Math.random() * quiz.length)
-          : unused[Math.floor(Math.random() * unused.length)];
-        usedQuestions.push(questionIndex);
+      if (quiz.length === 0 || questionQueue.length === 0) {
+        qText.innerText = '🎉 Test dokončen!';
+        checkBtn.disabled = true;
+        return;
       }
 
+      const questionIndex = questionQueue.shift();
       const item = quiz[questionIndex];
       qText.innerText = item.question;
 
@@ -258,7 +228,6 @@
 
       shuffled.forEach((opt, idx) => {
         const id = `option-${current}-${idx}`;
-
         const wrapper = document.createElement('div');
         wrapper.className = 'option';
 
@@ -297,6 +266,10 @@
 
           feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
           feedback.className = 'feedback incorrect';
+
+          // 🛠️ Zařadit otázku znovu do fronty po "retryDelay" otázkách
+          const insertIndex = Math.min(retryDelay, questionQueue.length);
+          questionQueue.splice(insertIndex, 0, questionIndex);
         }
 
         current++;
