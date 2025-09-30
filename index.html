@@ -229,7 +229,7 @@
         return;
       }
 
-      const questionIndex = questionQueue.shift();
+      const questionIndex = questionQueue[0]; // pouze náhled, ne shift
       const item = quiz[questionIndex];
 
       // Zobrazit text otázky včetně případného HTML (např. obrázků)
@@ -262,6 +262,8 @@
         optionsDiv.appendChild(wrapper);
       });
 
+      checkBtn.disabled = false;
+
       checkBtn.onclick = () => {
         checkBtn.disabled = true;
 
@@ -277,6 +279,8 @@
         if (isCorrect) {
           feedback.textContent = '✅ Správně!';
           feedback.className = 'feedback correct';
+
+          questionQueue.shift(); // odstraním otázku, protože správná
         } else {
           errorCount++;
           errorCountDisplay.textContent = errorCount;
@@ -289,7 +293,9 @@
           feedback.className = 'feedback incorrect';
 
           const insertIndex = Math.min(retryDelay, questionQueue.length);
-          questionQueue.splice(insertIndex, 0, questionIndex);
+          questionQueue.splice(insertIndex, 0, questionIndex); 
+
+          questionQueue.shift(); // odstraním ze začátku, protože otázku přidávám znovu později
         }
 
         current++;
