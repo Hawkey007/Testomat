@@ -35,7 +35,6 @@
       background-color: #757575;
     }
 
-    /* Nová lišta */
     .row-settings {
       display: flex;
       justify-content: space-between;
@@ -141,7 +140,6 @@
 
   <input type="file" id="fileInput" accept=".xlsx" style="display: none;" />
 
-  <!-- Nová řádka s počtem použitých řádků a počtem chyb -->
   <div class="row-settings">
     <div>
       <label for="usedRowsInput"><strong>Počet použitých řádků:</strong></label>
@@ -340,9 +338,13 @@
           feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
           feedback.className = 'feedback incorrect';
 
-          const insertIndex = Math.min(retryDelay, questionQueue.length);
-          questionQueue.splice(insertIndex, 0, questionIndex);
+          const questionIndex = questionQueue[0];
           questionQueue.shift();
+
+          if (questionIndex < quiz.length) {
+            const insertIndex = Math.min(retryDelay, questionQueue.length);
+            questionQueue.splice(insertIndex, 0, questionIndex);
+          }
         }
 
         current++;
@@ -351,7 +353,15 @@
 
         setTimeout(() => {
           rebuildQuizAccordingToLimit();
-          resetQuestionQueue();
+
+          questionQueue = questionQueue.filter(i => i < quiz.length);
+
+          for (let i = 0; i < quiz.length; i++) {
+            if (!questionQueue.includes(i)) {
+              questionQueue.push(i);
+            }
+          }
+
           showQuestion();
         }, delay);
       };
