@@ -143,7 +143,7 @@
   <div class="row-settings">
     <div>
       <label for="usedRowsInput"><strong>Počet použitých řádků:</strong></label>
-      <input id="usedRowsInput" type="number" min="1" value="1">
+      <input id="usedRowsInput" type="number" min="1" value="1" oninput="onUsedRowsChange()">
     </div>
     <div>
       <strong>Počet chyb:</strong> <span id="errorCount">0</span>
@@ -235,6 +235,18 @@
         correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : [],
         attempts: 0
       }));
+
+      // Omezíme frontu otázek podle nového limitu
+      questionQueue = questionQueue.filter(i => i < quiz.length);
+    }
+
+    function onUsedRowsChange() {
+      rebuildQuizAccordingToLimit();
+      // Pokud fronta je prázdná a režim nekonečný, obnovíme
+      if (questionQueue.length === 0 && mode === 'infinite') {
+        resetQuestionQueue();
+      }
+      showQuestion();
     }
 
     function resetQuestionQueue() {
@@ -271,10 +283,20 @@
       feedback.textContent = '';
       optionsDiv.innerHTML = '';
 
-      if (quiz.length === 0 || questionQueue.length === 0) {
+      if (quiz.length === 0) {
         qText.innerText = '🎉 Test dokončen!';
         checkBtn.disabled = true;
         return;
+      }
+
+      if (questionQueue.length === 0) {
+        if (mode === 'infinite') {
+          resetQuestionQueue();
+        } else {
+          qText.innerText = '🎉 Test dokončen!';
+          checkBtn.disabled = true;
+          return;
+        }
       }
 
       const questionIndex = questionQueue[0];
@@ -291,7 +313,7 @@
       item.shuffledOptions = shuffled;
 
       shuffled.forEach((opt, idx) => {
-        const id = `option-${current}-${idx}`;
+        const id = `option-${questionIndex}-${idx}`;
         const wrapper = document.createElement('div');
         wrapper.className = 'option';
 
@@ -314,12 +336,12 @@
       checkBtn.onclick = () => {
         checkBtn.disabled = true;
 
-        const selected = Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value);
-        const correct = item.correct;
+        const selected = Array.from(optionsDiv.querySelectorAll('input:checked'))
+                              .map(cb => cb.value.trim().toUpperCase());
+        const correct = item.correct.map(s => s.trim().toUpperCase());
 
         const isCorrect = selected.length === correct.length &&
-                          selected.every(val => correct.includes(val)) &&
-                          correct.every(val => selected.includes(val));
+                          selected.every(val => correct.includes(val));
 
         let correctTexts = [];
 
@@ -338,12 +360,10 @@
           feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
           feedback.className = 'feedback incorrect';
 
-          const questionIndex = questionQueue[0];
-          questionQueue.shift();
+          const qIndex = questionQueue.shift();
 
-          if (questionOrderMode === 'random' && questionIndex < quiz.length) {
-            const insertIndex = Math.min(retryDelay, questionQueue.length);
-            questionQueue.splice(insertIndex, 0, questionIndex);
+          if (questionOrderMode === 'random') {
+            questionQueue.push(qIndex);
           }
         }
 
@@ -352,20 +372,6 @@
         const delay = getDynamicDelay(isCorrect, correctTexts);
 
         setTimeout(() => {
-          rebuildQuizAccordingToLimit();
-
-          // odstraníme otázky mimo nový limit
-          questionQueue = questionQueue.filter(i => i < quiz.length);
-
-          // jen v random režimu doplníme nové otázky
-          if (questionOrderMode === 'random') {
-            for (let i = 0; i < quiz.length; i++) {
-              if (!questionQueue.includes(i)) {
-                questionQueue.push(i);
-              }
-            }
-          }
-
           showQuestion();
         }, delay);
       };
