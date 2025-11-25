@@ -110,6 +110,22 @@
     #checkBtn:hover {
       background-color: #1976d2;
     }
+
+    /* ------------- NOVÝ ŘÁDEK S POČTEM ŘÁDKŮ + CHYBAMI ------------- */
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    #usedRowsInput {
+      width: 80px;
+      padding: 5px;
+      background: #1e1e1e;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #e0e0e0;
+    }
   </style>
 </head>
 <body>
@@ -138,8 +154,16 @@
     </div>
   </div>
 
-  <div style="margin-bottom: 10px;">
-    <strong>Počet chyb:</strong> <span id="errorCount">0</span>
+  <!-- ***** NOVÝ ŘÁDEK ******** -->
+  <div class="settings-row">
+    <div>
+      <label><strong>Počet použitých řádků:</strong></label>
+      <input type="number" id="usedRowsInput" min="1" placeholder="">
+    </div>
+
+    <div>
+      <strong>Počet chyb:</strong> <span id="errorCount">0</span>
+    </div>
   </div>
 
   <div id="quizContainer" style="display:none;">
@@ -167,6 +191,7 @@
     const checkBtn = document.getElementById('checkBtn');
     const feedback = document.getElementById('feedback');
     const errorCountDisplay = document.getElementById('errorCount');
+    const usedRowsInput = document.getElementById('usedRowsInput');
 
     function shuffleArray(array) {
       return array.map(value => ({ value, sort: Math.random() }))
@@ -174,12 +199,28 @@
                   .map(({ value }) => value);
     }
 
+    /* ----------------------------------------------
+          PO NAČTENÍ SOUBORU – NOVÁ LOGIKA MAX ŘÁDKŮ
+       ---------------------------------------------- */
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
       if (!file) return;
 
       readXlsxFile(file).then(rows => {
-        quiz = rows.slice(1).map(r => ({
+        const maxRows = rows.length - 1;
+
+        // Propíšeme maximum i výchozí hodnotu
+        usedRowsInput.max = maxRows;
+        usedRowsInput.value = maxRows;
+
+        let usedRows = parseInt(usedRowsInput.value);
+
+        if (isNaN(usedRows) || usedRows <= 0) usedRows = maxRows;
+        if (usedRows > maxRows) usedRows = maxRows;
+
+        usedRowsInput.value = usedRows;
+
+        quiz = rows.slice(1, 1 + usedRows).map(r => ({
           question: r[0],
           options: [r[1], r[2], r[3]].filter(Boolean),
           correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : [],
@@ -229,10 +270,9 @@
         return;
       }
 
-      const questionIndex = questionQueue[0]; // pouze náhled, ne shift
+      const questionIndex = questionQueue[0];
       const item = quiz[questionIndex];
 
-      // Zobrazit text otázky včetně případného HTML (např. obrázků)
       qText.innerHTML = item.question;
 
       const labeledOptions = item.options.map((text, i) => ({
@@ -270,17 +310,17 @@
         const selected = Array.from(optionsDiv.querySelectorAll('input:checked')).map(cb => cb.value);
         const correct = item.correct;
 
-        const isCorrect = selected.length === correct.length &&
-                          selected.every(val => correct.includes(val)) &&
-                          correct.every(val => selected.includes(val));
+        const isCorrect =
+          selected.length === correct.length &&
+          selected.every(val => correct.includes(val)) &&
+          correct.every(val => selected.includes(val));
 
         let correctTexts = [];
 
         if (isCorrect) {
           feedback.textContent = '✅ Správně!';
           feedback.className = 'feedback correct';
-
-          questionQueue.shift(); // odstraním otázku, protože správná
+          questionQueue.shift();
         } else {
           errorCount++;
           errorCountDisplay.textContent = errorCount;
@@ -293,9 +333,9 @@
           feedback.className = 'feedback incorrect';
 
           const insertIndex = Math.min(retryDelay, questionQueue.length);
-          questionQueue.splice(insertIndex, 0, questionIndex); 
+          questionQueue.splice(insertIndex, 0, questionIndex);
 
-          questionQueue.shift(); // odstraním ze začátku, protože otázku přidávám znovu později
+          questionQueue.shift();
         }
 
         current++;
