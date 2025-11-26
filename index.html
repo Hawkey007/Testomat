@@ -286,6 +286,7 @@
         return;
       }
 
+      // === 🔥 KLÍČOVÁ OPRAVA — stejné jako u první aplikace ===
       if (questionQueue.length === 0) {
         if (mode === 'infinite') {
           resetQuestionQueue();
@@ -295,23 +296,21 @@
           return;
         }
       }
+      // === KONEC OPRAVY ===
 
       const questionIndex = questionQueue[0];
       const item = quiz[questionIndex];
 
       qText.innerHTML = item.question;
 
-      // Labeling options
       const labeledOptions = item.options.map((text, i) => ({
         label: String.fromCharCode(65 + i),
         text: text
       }));
 
-      // Shuffle options for display
       const shuffled = shuffleArray(labeledOptions);
       item.shuffledOptions = shuffled;
 
-      // Render options
       shuffled.forEach((opt, idx) => {
         const id = `option-${questionIndex}-${idx}`;
         const wrapper = document.createElement('div');
@@ -347,7 +346,6 @@
 
         let correctTexts = [];
 
-        // Remove from queue now
         const qIndex = questionQueue.shift();
 
         if (isCorrect) {
@@ -364,7 +362,6 @@
           feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
           feedback.className = 'feedback incorrect';
 
-          // === FIXED RETRY SYSTEM (VARIANTA B) ===
           if (mode === 'infinite') {
             const insertAt = Math.min(retryDelay, questionQueue.length);
             if (!questionQueue.includes(qIndex)) {
