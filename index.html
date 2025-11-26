@@ -232,17 +232,14 @@
       quiz = rows.slice(1, 1 + usedRows).map(r => ({
         question: r[0],
         options: [r[1], r[2], r[3]].filter(Boolean),
-        correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : [],
-        attempts: 0
+        correct: r[4] ? r[4].split(/[ ,]+/).map(s => s.trim().toUpperCase()) : []
       }));
 
-      // Omezíme frontu otázek podle nového limitu
       questionQueue = questionQueue.filter(i => i < quiz.length);
     }
 
     function onUsedRowsChange() {
       rebuildQuizAccordingToLimit();
-      // Pokud fronta je prázdná a režim nekonečný, obnovíme
       if (questionQueue.length === 0 && mode === 'infinite') {
         resetQuestionQueue();
       }
@@ -304,14 +301,17 @@
 
       qText.innerHTML = item.question;
 
+      // Labeling options
       const labeledOptions = item.options.map((text, i) => ({
         label: String.fromCharCode(65 + i),
         text: text
       }));
 
+      // Shuffle options for display
       const shuffled = shuffleArray(labeledOptions);
       item.shuffledOptions = shuffled;
 
+      // Render options
       shuffled.forEach((opt, idx) => {
         const id = `option-${questionIndex}-${idx}`;
         const wrapper = document.createElement('div');
@@ -338,17 +338,21 @@
 
         const selected = Array.from(optionsDiv.querySelectorAll('input:checked'))
                               .map(cb => cb.value.trim().toUpperCase());
-        const correct = item.correct.map(s => s.trim().toUpperCase());
 
-        const isCorrect = selected.length === correct.length &&
-                          selected.every(val => correct.includes(val));
+        const correct = item.correct;
+
+        const isCorrect =
+          selected.length === correct.length &&
+          selected.every(val => correct.includes(val));
 
         let correctTexts = [];
+
+        // Remove from queue now
+        const qIndex = questionQueue.shift();
 
         if (isCorrect) {
           feedback.textContent = '✅ Správně!';
           feedback.className = 'feedback correct';
-          questionQueue.shift();
         } else {
           errorCount++;
           errorCountDisplay.textContent = errorCount;
@@ -360,29 +364,27 @@
           feedback.textContent = `❌ Špatně. Správná odpověď: ${correctTexts.join(', ')}`;
           feedback.className = 'feedback incorrect';
 
-          const qIndex = questionQueue.shift();
-
-          if (questionOrderMode === 'random') {
-            questionQueue.push(qIndex);
+          // === FIXED RETRY SYSTEM (VARIANTA B) ===
+          if (mode === 'infinite') {
+            const insertAt = Math.min(retryDelay, questionQueue.length);
+            if (!questionQueue.includes(qIndex)) {
+              questionQueue.splice(insertAt, 0, qIndex);
+            }
           }
         }
 
         current++;
 
         const delay = getDynamicDelay(isCorrect, correctTexts);
-
-        setTimeout(() => {
-          showQuestion();
-        }, delay);
+        setTimeout(showQuestion, delay);
       };
     }
 
     function getDynamicDelay(isCorrect, correctTexts) {
       if (isCorrect) return 1000;
-      const text = correctTexts.join(', ');
-      const length = text.length;
-      if (length <= 20) return 2000;
-      if (length <= 40) return 3000;
+      const len = correctTexts.join(', ').length;
+      if (len <= 20) return 2000;
+      if (len <= 40) return 3000;
       return 4000;
     }
   </script>
